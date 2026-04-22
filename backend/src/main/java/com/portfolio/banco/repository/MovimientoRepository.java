@@ -14,13 +14,24 @@ public interface MovimientoRepository extends JpaRepository<Movimiento, Long> {
     List<Movimiento> findByCuentaId(Long cuentaId);
 
     @Query("""
-    SELECT COALESCE(SUM(ABS(m.valor)), 0)
-    FROM Movimiento m
-    WHERE m.cuenta.cliente.id = :clienteId
-      AND m.fecha BETWEEN :inicio AND :fin
-      AND m.tipoMovimiento = 'DEBITO'
+        SELECT COALESCE(SUM(ABS(m.valor)), 0)
+        FROM Movimiento m
+        WHERE m.cuenta.cliente.id = :clienteId
+        AND m.fecha BETWEEN :inicio AND :fin
+        AND m.tipoMovimiento = 'DEBITO'
     """)
     BigDecimal sumDebitosPorClienteEnRango(Long clienteId,
-                                        LocalDateTime inicio,
-                                        LocalDateTime fin);
+                                           LocalDateTime inicio,
+                                           LocalDateTime fin);
+
+    @Query("""
+        SELECT m
+        FROM Movimiento m
+        WHERE m.cuenta.cliente.id = :clienteId
+        AND m.fecha BETWEEN :inicio AND :fin
+        ORDER BY m.fecha ASC
+    """)
+    List<Movimiento> findReporte(Long clienteId,
+                                 LocalDateTime inicio,
+                                 LocalDateTime fin);
 }
