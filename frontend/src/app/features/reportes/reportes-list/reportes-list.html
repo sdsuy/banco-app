@@ -1,1 +1,92 @@
-<p>reportes-list works!</p>
+<div class="page-header">
+  <h2>Reportes</h2>
+</div>
+
+<div class="card">
+  <h3>Estado de cuenta</h3>
+
+  <form [formGroup]="form" class="form-grid">
+    <div class="field">
+      <label>Cliente</label>
+      <select formControlName="clienteId">
+        <option [ngValue]="null">Seleccione un cliente</option>
+        <option *ngFor="let cliente of clientes" [ngValue]="cliente.id">
+          {{ cliente.nombre }} - {{ cliente.clienteId }}
+        </option>
+      </select>
+      <small class="validation" *ngIf="campoInvalido('clienteId')">
+        Debe seleccionar un cliente.
+      </small>
+    </div>
+
+    <div class="field">
+      <label>Fecha inicio</label>
+      <input type="date" formControlName="inicio" />
+      <small class="validation" *ngIf="campoInvalido('inicio')">
+        La fecha inicio es obligatoria.
+      </small>
+    </div>
+
+    <div class="field">
+      <label>Fecha fin</label>
+      <input type="date" formControlName="fin" />
+      <small class="validation" *ngIf="campoInvalido('fin')">
+        La fecha fin es obligatoria.
+      </small>
+    </div>
+
+    <div class="actions">
+      <button type="button" (click)="consultar()">Consultar</button>
+      <button type="button" class="secondary" (click)="descargarPdf()">Descargar PDF</button>
+    </div>
+  </form>
+
+  <div class="message success" *ngIf="mensaje">{{ mensaje }}</div>
+  <div class="message error" *ngIf="error">{{ error }}</div>
+</div>
+
+<div class="card" *ngIf="reportes.length > 0">
+  <div class="summary">
+    <div class="summary-item">
+      <span>Total créditos</span>
+      <strong class="positive">{{ totalCreditos() }}</strong>
+    </div>
+
+    <div class="summary-item">
+      <span>Total débitos</span>
+      <strong class="negative">{{ totalDebitos() }}</strong>
+    </div>
+  </div>
+
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>Fecha</th>
+          <th>Cliente</th>
+          <th>Número Cuenta</th>
+          <th>Tipo</th>
+          <th>Saldo Inicial</th>
+          <th>Estado</th>
+          <th>Movimiento</th>
+          <th>Saldo Disponible</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        <tr *ngFor="let item of reportes">
+          <td>{{ item.fecha | date:'dd/MM/yyyy HH:mm' }}</td>
+          <td>{{ item.cliente }}</td>
+          <td>{{ item.numeroCuenta }}</td>
+          <td>{{ item.tipoCuenta }}</td>
+          <td>{{ item.saldoInicial }}</td>
+          <td>{{ item.estado ? 'Activo' : 'Inactivo' }}</td>
+          <td [class.positive]="item.movimiento > 0" [class.negative]="item.movimiento < 0">
+            {{ item.movimiento }}
+          </td>
+          <td>{{ item.saldoDisponible }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
