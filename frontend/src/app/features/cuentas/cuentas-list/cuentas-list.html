@@ -1,1 +1,111 @@
-<p>cuentas-list works!</p>
+<div class="page-header">
+  <h2>Cuentas</h2>
+
+  <input
+    type="text"
+    [(ngModel)]="busqueda"
+    (input)="aplicarFiltro()"
+    placeholder="Búsqueda rápida"
+    class="search-input"
+  />
+</div>
+
+<div class="card">
+  <h3>{{ editandoId ? 'Editar cuenta' : 'Nueva cuenta' }}</h3>
+
+  <form [formGroup]="form" (ngSubmit)="guardar()" class="form-grid">
+    <div class="field">
+      <label>Número de cuenta</label>
+      <input type="text" formControlName="numeroCuenta" />
+      <small class="validation" *ngIf="campoInvalido('numeroCuenta')">
+        El número de cuenta es obligatorio.
+      </small>
+    </div>
+
+    <div class="field">
+      <label>Tipo de cuenta</label>
+      <select formControlName="tipoCuenta">
+        <option value="AHORROS">Ahorros</option>
+        <option value="CORRIENTE">Corriente</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label>Saldo inicial</label>
+      <input type="number" formControlName="saldoInicial" />
+      <small class="validation" *ngIf="campoInvalido('saldoInicial')">
+        El saldo inicial debe ser válido.
+      </small>
+    </div>
+
+    <div class="field">
+      <label>Cliente</label>
+      <select formControlName="clienteId">
+        <option [ngValue]="null">Seleccione un cliente</option>
+        <option *ngFor="let cliente of clientes" [ngValue]="cliente.id">
+          {{ cliente.nombre }} - {{ cliente.clienteId }}
+        </option>
+      </select>
+      <small class="validation" *ngIf="campoInvalido('clienteId')">
+        Debe seleccionar un cliente.
+      </small>
+    </div>
+
+    <div class="field checkbox-field">
+      <label>
+        <input type="checkbox" formControlName="estado" />
+        Activa
+      </label>
+    </div>
+
+    <div class="actions">
+      <button type="submit">
+        {{ editandoId ? 'Actualizar' : 'Crear' }}
+      </button>
+
+      <button type="button" class="secondary" (click)="cancelar()">
+        Limpiar
+      </button>
+    </div>
+  </form>
+
+  <div class="message success" *ngIf="mensaje">{{ mensaje }}</div>
+  <div class="message error" *ngIf="error">{{ error }}</div>
+</div>
+
+<div class="card">
+  <h3>Listado</h3>
+
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          <th>Número</th>
+          <th>Tipo</th>
+          <th>Saldo inicial</th>
+          <th>Cliente</th>
+          <th>Estado</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        <tr *ngFor="let cuenta of cuentasFiltradas">
+          <td>{{ cuenta.numeroCuenta }}</td>
+          <td>{{ cuenta.tipoCuenta }}</td>
+          <td>{{ cuenta.saldoInicial }}</td>
+          <td>{{ cuenta.nombreCliente }}</td>
+          <td>{{ cuenta.estado ? 'Activa' : 'Inactiva' }}</td>
+          <td class="actions-cell">
+            <button type="button" (click)="editar(cuenta)">Editar</button>
+            <button type="button" class="danger" (click)="eliminar(cuenta.id)">Eliminar</button>
+          </td>
+        </tr>
+
+        <tr *ngIf="cuentasFiltradas.length === 0">
+          <td colspan="6" class="empty-row">No hay cuentas para mostrar.</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>

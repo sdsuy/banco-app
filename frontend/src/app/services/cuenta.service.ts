@@ -15,6 +15,10 @@ export class CuentaService {
     return this.http.get<Cuenta[]>(this.apiUrl);
   }
 
+  obtener(id: number): Observable<Cuenta> {
+    return this.http.get<Cuenta>(`${this.apiUrl}/${id}`);
+  }
+
   crear(cuenta: Cuenta): Observable<Cuenta> {
     return this.http.post<Cuenta>(this.apiUrl, cuenta);
   }
