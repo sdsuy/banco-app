@@ -1,0 +1,23 @@
+spring:
+  application:
+    name: banco-api
+
+  datasource:
+    url: jdbc:postgresql://192.168.50.1:5433/banco_db
+    username: devuser
+    password: devpass
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+
+server:
+  port: 8080
+
+app:
+  retiro:
+    limite-diario: 1000
