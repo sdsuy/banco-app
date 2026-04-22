@@ -15,6 +15,10 @@ export class MovimientoService {
     return this.http.get<Movimiento[]>(this.apiUrl);
   }
 
+  listarPorCuenta(cuentaId: number): Observable<Movimiento[]> {
+    return this.http.get<Movimiento[]>(`${this.apiUrl}/cuenta/${cuentaId}`);
+  }
+
   crear(movimiento: Movimiento): Observable<Movimiento> {
     return this.http.post<Movimiento>(this.apiUrl, movimiento);
   }
