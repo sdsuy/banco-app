@@ -1,5 +1,5 @@
 import { CommonModule, DatePipe } from '@angular/common';
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ClienteService } from '../../../services/cliente.service';
 import { ReporteService } from '../../../services/reporte.service';
@@ -17,11 +17,23 @@ export class ReportesList implements OnInit {
   private clienteService = inject(ClienteService);
   private reporteService = inject(ReporteService);
 
-  clientes: Cliente[] = [];
-  reportes: Reporte[] = [];
+clientes = signal<Cliente[]>([]);
+reportes = signal<Reporte[]>([]);
 
-  error = '';
-  mensaje = '';
+error = signal('');
+mensaje = signal('');
+
+totalCreditos = computed(() =>
+  this.reportes()
+    .filter((r) => r.movimiento > 0)
+    .reduce((acc, r) => acc + r.movimiento, 0)
+);
+
+totalDebitos = computed(() =>
+  this.reportes()
+    .filter((r) => r.movimiento < 0)
+    .reduce((acc, r) => acc + r.movimiento, 0)
+);
 
   form = this.fb.group({
     clienteId: [null as number | null, [Validators.required]],
@@ -36,18 +48,18 @@ export class ReportesList implements OnInit {
   cargarClientes(): void {
     this.clienteService.listar().subscribe({
       next: (data) => {
-        this.clientes = data;
+        this.clientes.set(data);
       },
       error: () => {
-        this.error = 'No se pudieron cargar los clientes.';
+        this.error.set('No se pudieron cargar los clientes.');
       }
     });
   }
 
   consultar(): void {
-    this.error = '';
-    this.mensaje = '';
-    this.reportes = [];
+    this.error.set('');
+    this.mensaje.set('');
+    this.reportes.set([]);
 
     if (this.form.invalid) {
       this.form.markAllAsTouched();
@@ -60,20 +72,20 @@ export class ReportesList implements OnInit {
 
     this.reporteService.obtener(clienteId, inicio, fin).subscribe({
       next: (data) => {
-        this.reportes = data;
-        this.mensaje = data.length > 0
+        this.reportes.set(data);
+        this.mensaje.set(data.length > 0
           ? 'Reporte generado correctamente.'
-          : 'No se encontraron movimientos para el rango indicado.';
+          : 'No se encontraron movimientos para el rango indicado.');
       },
       error: (err) => {
-        this.error = this.extraerError(err);
+        this.error.set(this.extraerError(err));
       }
     });
   }
 
   descargarPdf(): void {
-    this.error = '';
-    this.mensaje = '';
+    this.error.set('');
+    this.mensaje.set('');
 
     if (this.form.invalid) {
       this.form.markAllAsTouched();
@@ -92,10 +104,10 @@ export class ReportesList implements OnInit {
         anchor.download = `estado-cuenta-${clienteId}-${inicio}-${fin}.pdf`;
         anchor.click();
         window.URL.revokeObjectURL(url);
-        this.mensaje = 'PDF descargado correctamente.';
+        this.mensaje.set('PDF descargado correctamente.');
       },
       error: (err) => {
-        this.error = this.extraerError(err);
+        this.error.set(this.extraerError(err));
       }
     });
   }
@@ -103,18 +115,6 @@ export class ReportesList implements OnInit {
   campoInvalido(nombreCampo: string): boolean {
     const control = this.form.get(nombreCampo);
     return !!control && control.invalid && (control.dirty || control.touched);
-  }
-
-  totalCreditos(): number {
-    return this.reportes
-      .filter((r) => r.movimiento > 0)
-      .reduce((acc, r) => acc + r.movimiento, 0);
-  }
-
-  totalDebitos(): number {
-    return this.reportes
-      .filter((r) => r.movimiento < 0)
-      .reduce((acc, r) => acc + r.movimiento, 0);
   }
 
   private extraerError(err: any): string {

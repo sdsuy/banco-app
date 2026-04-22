@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MovimientoService } from '../../../services/movimiento.service';
 import { CuentaService } from '../../../services/cuenta.service';
@@ -17,13 +17,28 @@ export class MovimientosList implements OnInit {
   private movimientoService = inject(MovimientoService);
   private cuentaService = inject(CuentaService);
 
-  movimientos: Movimiento[] = [];
-  movimientosFiltrados: Movimiento[] = [];
-  cuentas: Cuenta[] = [];
+movimientos = signal<Movimiento[]>([]);
+cuentas = signal<Cuenta[]>([]);
 
-  error = '';
-  mensaje = '';
-  busqueda = '';
+busqueda = signal('');
+error = signal('');
+mensaje = signal('');
+
+movimientosFiltrados = computed(() => {
+  const texto = this.busqueda().toLowerCase().trim();
+  const lista = this.movimientos();
+
+  if (!texto) {
+    return lista;
+  }
+
+  return lista.filter((movimiento) =>
+    (movimiento.numeroCuenta ?? '').toLowerCase().includes(texto) ||
+    movimiento.tipoMovimiento.toLowerCase().includes(texto) ||
+    String(movimiento.valor).includes(texto) ||
+    String(movimiento.saldo ?? '').includes(texto)
+  );
+});
 
   form = this.fb.group({
     tipoMovimiento: ['CREDITO' as 'CREDITO' | 'DEBITO', [Validators.required]],
@@ -39,10 +54,10 @@ export class MovimientosList implements OnInit {
   cargarCuentas(): void {
     this.cuentaService.listar().subscribe({
       next: (data) => {
-        this.cuentas = data;
+        this.cuentas.set(data);
       },
       error: () => {
-        this.error = 'No se pudieron cargar las cuentas.';
+        this.error.set('No se pudieron cargar las cuentas.');
       }
     });
   }
@@ -50,18 +65,17 @@ export class MovimientosList implements OnInit {
   cargarMovimientos(): void {
     this.movimientoService.listar().subscribe({
       next: (data) => {
-        this.movimientos = [...data].reverse();
-        this.aplicarFiltro();
+        this.movimientos.set([...data].reverse());
       },
       error: () => {
-        this.error = 'No se pudieron cargar los movimientos.';
+        this.error.set('No se pudieron cargar los movimientos.');
       }
     });
   }
 
   guardar(): void {
-    this.error = '';
-    this.mensaje = '';
+    this.error.set('');
+    this.mensaje.set('');
 
     if (this.form.invalid) {
       this.form.markAllAsTouched();
@@ -76,12 +90,12 @@ export class MovimientosList implements OnInit {
 
     this.movimientoService.crear(payload).subscribe({
       next: () => {
-        this.mensaje = 'Movimiento registrado correctamente.';
+        this.mensaje.set('Movimiento registrado correctamente.');
         this.cancelar();
         this.cargarMovimientos();
       },
       error: (err) => {
-        this.error = this.extraerError(err);
+        this.error.set(this.extraerError(err));
       }
     });
   }
@@ -92,22 +106,6 @@ export class MovimientosList implements OnInit {
       valor: 0,
       cuentaId: null
     });
-  }
-
-  aplicarFiltro(): void {
-    const texto = this.busqueda.toLowerCase().trim();
-
-    if (!texto) {
-      this.movimientosFiltrados = [...this.movimientos];
-      return;
-    }
-
-    this.movimientosFiltrados = this.movimientos.filter((movimiento) =>
-      (movimiento.numeroCuenta ?? '').toLowerCase().includes(texto) ||
-      movimiento.tipoMovimiento.toLowerCase().includes(texto) ||
-      String(movimiento.valor).includes(texto) ||
-      String(movimiento.saldo ?? '').includes(texto)
-    );
   }
 
   campoInvalido(nombreCampo: string): boolean {

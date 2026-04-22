@@ -10,7 +10,7 @@
       <label>Cliente</label>
       <select formControlName="clienteId">
         <option [ngValue]="null">Seleccione un cliente</option>
-        <option *ngFor="let cliente of clientes" [ngValue]="cliente.id">
+        <option *ngFor="let cliente of clientes()" [ngValue]="cliente.id">
           {{ cliente.nombre }} - {{ cliente.clienteId }}
         </option>
       </select>
@@ -41,11 +41,11 @@
     </div>
   </form>
 
-  <div class="message success" *ngIf="mensaje">{{ mensaje }}</div>
-  <div class="message error" *ngIf="error">{{ error }}</div>
+  <div class="message success" *ngIf="mensaje()">{{ mensaje() }}</div>
+  <div class="message error" *ngIf="error()">{{ error() }}</div>
 </div>
 
-<div class="card" *ngIf="reportes.length > 0">
+<div class="card" *ngIf="reportes().length > 0">
   <div class="summary">
     <div class="summary-item">
       <span>Total créditos</span>
@@ -74,7 +74,7 @@
       </thead>
 
       <tbody>
-        <tr *ngFor="let item of reportes">
+        <tr *ngFor="let item of reportes()">
           <td>{{ item.fecha | date:'dd/MM/yyyy HH:mm' }}</td>
           <td>{{ item.cliente }}</td>
           <td>{{ item.numeroCuenta }}</td>

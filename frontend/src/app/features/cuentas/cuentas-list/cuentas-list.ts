@@ -1,5 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { CuentaService } from '../../../services/cuenta.service';
 import { Cuenta } from '../../../models/cuenta.model';
@@ -17,14 +17,28 @@ export class CuentasList implements OnInit {
   private cuentaService = inject(CuentaService);
   private clienteService = inject(ClienteService);
 
-  cuentas: Cuenta[] = [];
-  cuentasFiltradas: Cuenta[] = [];
-  clientes: Cliente[] = [];
+  cuentas = signal<Cuenta[]>([]);
+  clientes = signal<Cliente[]>([]);
 
-  editandoId?: number;
-  error = '';
-  mensaje = '';
-  busqueda = '';
+  busqueda = signal('');
+  error = signal('');
+  mensaje = signal('');
+  editandoId = signal<number | undefined>(undefined);
+
+  cuentasFiltradas = computed(() => {
+    const texto = this.busqueda().toLowerCase().trim();
+    const lista = this.cuentas();
+
+    if (!texto) {
+      return lista;
+    }
+
+    return lista.filter((cuenta) =>
+      cuenta.numeroCuenta.toLowerCase().includes(texto) ||
+      cuenta.tipoCuenta.toLowerCase().includes(texto) ||
+      (cuenta.nombreCliente ?? '').toLowerCase().includes(texto)
+    );
+  });
 
   form = this.fb.group({
     numeroCuenta: ['', [Validators.required]],
@@ -42,10 +56,10 @@ export class CuentasList implements OnInit {
   cargarClientes(): void {
     this.clienteService.listar().subscribe({
       next: (data) => {
-        this.clientes = data;
+        this.clientes.set(data);
       },
       error: () => {
-        this.error = 'No se pudieron cargar los clientes.';
+        this.error.set('No se pudieron cargar los clientes.');
       }
     });
   }
@@ -53,18 +67,17 @@ export class CuentasList implements OnInit {
   cargarCuentas(): void {
     this.cuentaService.listar().subscribe({
       next: (data) => {
-        this.cuentas = data;
-        this.aplicarFiltro();
+        this.cuentas.set(data);
       },
       error: () => {
-        this.error = 'No se pudieron cargar las cuentas.';
+        this.error.set('No se pudieron cargar las cuentas.');
       }
     });
   }
 
   guardar(): void {
-    this.error = '';
-    this.mensaje = '';
+    this.error.set('');
+    this.mensaje.set('');
 
     if (this.form.invalid) {
       this.form.markAllAsTouched();
@@ -79,28 +92,27 @@ export class CuentasList implements OnInit {
       clienteId: Number(this.form.value.clienteId)
     };
 
-    const request = this.editandoId
-      ? this.cuentaService.actualizar(this.editandoId, payload)
+    const id = this.editandoId();
+    const request = id
+      ? this.cuentaService.actualizar(id, payload)
       : this.cuentaService.crear(payload);
 
     request.subscribe({
       next: () => {
-        this.mensaje = this.editandoId
-          ? 'Cuenta actualizada correctamente.'
-          : 'Cuenta creada correctamente.';
+        this.mensaje.set(id ? 'Cuenta actualizada correctamente.' : 'Cuenta creada correctamente.');
         this.cancelar();
         this.cargarCuentas();
       },
       error: (err) => {
-        this.error = this.extraerError(err);
+        this.error.set(this.extraerError(err));
       }
     });
   }
 
   editar(cuenta: Cuenta): void {
-    this.error = '';
-    this.mensaje = '';
-    this.editandoId = cuenta.id;
+    this.error.set('');
+    this.mensaje.set('');
+    this.editandoId.set(cuenta.id);
 
     this.form.patchValue({
       numeroCuenta: cuenta.numeroCuenta,
@@ -114,22 +126,22 @@ export class CuentasList implements OnInit {
   eliminar(id?: number): void {
     if (!id) return;
 
-    this.error = '';
-    this.mensaje = '';
+    this.error.set('');
+    this.mensaje.set('');
 
     this.cuentaService.eliminar(id).subscribe({
       next: () => {
-        this.mensaje = 'Cuenta eliminada correctamente.';
+        this.mensaje.set('Cuenta eliminada correctamente.');
         this.cargarCuentas();
       },
       error: (err) => {
-        this.error = this.extraerError(err);
+        this.error.set(this.extraerError(err));
       }
     });
   }
 
   cancelar(): void {
-    this.editandoId = undefined;
+    this.editandoId.set(undefined);
     this.form.reset({
       numeroCuenta: '',
       tipoCuenta: 'AHORROS',
@@ -137,21 +149,6 @@ export class CuentasList implements OnInit {
       estado: true,
       clienteId: null
     });
-  }
-
-  aplicarFiltro(): void {
-    const texto = this.busqueda.toLowerCase().trim();
-
-    if (!texto) {
-      this.cuentasFiltradas = [...this.cuentas];
-      return;
-    }
-
-    this.cuentasFiltradas = this.cuentas.filter((cuenta) =>
-      cuenta.numeroCuenta.toLowerCase().includes(texto) ||
-      cuenta.tipoCuenta.toLowerCase().includes(texto) ||
-      (cuenta.nombreCliente ?? '').toLowerCase().includes(texto)
-    );
   }
 
   campoInvalido(nombreCampo: string): boolean {

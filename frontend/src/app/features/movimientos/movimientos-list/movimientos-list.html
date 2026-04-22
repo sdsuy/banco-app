@@ -3,8 +3,8 @@
 
   <input
     type="text"
-    [(ngModel)]="busqueda"
-    (input)="aplicarFiltro()"
+    [ngModel]="busqueda()"
+    (ngModelChange)="busqueda.set($event)"
     placeholder="Búsqueda rápida"
     class="search-input"
   />
@@ -34,7 +34,7 @@
       <label>Cuenta</label>
       <select formControlName="cuentaId">
         <option [ngValue]="null">Seleccione una cuenta</option>
-        <option *ngFor="let cuenta of cuentas" [ngValue]="cuenta.id">
+        <option *ngFor="let cuenta of cuentas()" [ngValue]="cuenta.id">
           {{ cuenta.numeroCuenta }} - {{ cuenta.nombreCliente }}
         </option>
       </select>
@@ -49,8 +49,8 @@
     </div>
   </form>
 
-  <div class="message success" *ngIf="mensaje">{{ mensaje }}</div>
-  <div class="message error" *ngIf="error">{{ error }}</div>
+  <div class="message success" *ngIf="mensaje()">{{ mensaje() }}</div>
+  <div class="message error" *ngIf="error()">{{ error() }}</div>
 </div>
 
 <div class="card">
@@ -69,7 +69,7 @@
       </thead>
 
       <tbody>
-        <tr *ngFor="let movimiento of movimientosFiltrados">
+        <tr *ngFor="let movimiento of movimientosFiltrados()">
           <td>{{ movimiento.fecha | date:'dd/MM/yyyy HH:mm' }}</td>
           <td>{{ movimiento.numeroCuenta }}</td>
           <td>{{ movimiento.tipoMovimiento }}</td>
@@ -79,7 +79,7 @@
           <td>{{ movimiento.saldo }}</td>
         </tr>
 
-        <tr *ngIf="movimientosFiltrados.length === 0">
+        <tr *ngIf="movimientosFiltrados().length === 0">
           <td colspan="5" class="empty-row">No hay movimientos para mostrar.</td>
         </tr>
       </tbody>

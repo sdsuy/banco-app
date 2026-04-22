@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ClienteService } from '../../../services/cliente.service';
 import { Cliente } from '../../../models/cliente.model';
@@ -14,12 +14,27 @@ export class ClientesList implements OnInit {
   private fb = inject(FormBuilder);
   private clienteService = inject(ClienteService);
 
-  clientes: Cliente[] = [];
-  clientesFiltrados: Cliente[] = [];
-  editandoId?: number;
-  error = '';
-  mensaje = '';
-  busqueda = '';
+  clientes = signal<Cliente[]>([]);
+  busqueda = signal('');
+  error = signal('');
+  mensaje = signal('');
+  editandoId = signal<number | undefined>(undefined);
+
+  clientesFiltrados = computed(() => {
+    const texto = this.busqueda().toLowerCase().trim();
+    const lista = this.clientes();
+
+    if (!texto) {
+      return lista;
+    }
+
+    return lista.filter((cliente) =>
+      cliente.nombre.toLowerCase().includes(texto) ||
+      cliente.identificacion.toLowerCase().includes(texto) ||
+      cliente.clienteId.toLowerCase().includes(texto) ||
+      cliente.telefono.toLowerCase().includes(texto)
+    );
+  });
 
   form = this.fb.group({
     nombre: ['', [Validators.required]],
@@ -40,18 +55,17 @@ export class ClientesList implements OnInit {
   cargarClientes(): void {
     this.clienteService.listar().subscribe({
       next: (data) => {
-        this.clientes = data;
-        this.aplicarFiltro();
+        this.clientes.set(data);
       },
       error: () => {
-        this.error = 'No se pudieron cargar los clientes.';
+        this.error.set('No se pudieron cargar los clientes.');
       }
     });
   }
 
   guardar(): void {
-    this.error = '';
-    this.mensaje = '';
+    this.error.set('');
+    this.mensaje.set('');
 
     if (this.form.invalid) {
       this.form.markAllAsTouched();
@@ -70,28 +84,27 @@ export class ClientesList implements OnInit {
       estado: Boolean(this.form.value.estado)
     };
 
-    const request = this.editandoId
-      ? this.clienteService.actualizar(this.editandoId, payload)
+    const id = this.editandoId();
+    const request = id
+      ? this.clienteService.actualizar(id, payload)
       : this.clienteService.crear(payload);
 
     request.subscribe({
       next: () => {
-        this.mensaje = this.editandoId
-          ? 'Cliente actualizado correctamente.'
-          : 'Cliente creado correctamente.';
+        this.mensaje.set(id ? 'Cliente actualizado correctamente.' : 'Cliente creado correctamente.');
         this.cancelar();
         this.cargarClientes();
       },
       error: (err) => {
-        this.error = this.extraerError(err);
+        this.error.set(this.extraerError(err));
       }
     });
   }
 
   editar(cliente: Cliente): void {
-    this.error = '';
-    this.mensaje = '';
-    this.editandoId = cliente.id;
+    this.error.set('');
+    this.mensaje.set('');
+    this.editandoId.set(cliente.id);
 
     this.form.patchValue({
       nombre: cliente.nombre,
@@ -109,22 +122,22 @@ export class ClientesList implements OnInit {
   eliminar(id?: number): void {
     if (!id) return;
 
-    this.error = '';
-    this.mensaje = '';
+    this.error.set('');
+    this.mensaje.set('');
 
     this.clienteService.eliminar(id).subscribe({
       next: () => {
-        this.mensaje = 'Cliente eliminado correctamente.';
+        this.mensaje.set('Cliente eliminado correctamente.');
         this.cargarClientes();
       },
       error: (err) => {
-        this.error = this.extraerError(err);
+        this.error.set(this.extraerError(err));
       }
     });
   }
 
   cancelar(): void {
-    this.editandoId = undefined;
+    this.editandoId.set(undefined);
     this.form.reset({
       nombre: '',
       genero: 'MASCULINO',
@@ -136,22 +149,6 @@ export class ClientesList implements OnInit {
       contrasena: '',
       estado: true
     });
-  }
-
-  aplicarFiltro(): void {
-    const texto = this.busqueda.toLowerCase().trim();
-
-    if (!texto) {
-      this.clientesFiltrados = [...this.clientes];
-      return;
-    }
-
-    this.clientesFiltrados = this.clientes.filter((cliente) =>
-      cliente.nombre.toLowerCase().includes(texto) ||
-      cliente.identificacion.toLowerCase().includes(texto) ||
-      cliente.clienteId.toLowerCase().includes(texto) ||
-      cliente.telefono.toLowerCase().includes(texto)
-    );
   }
 
   campoInvalido(nombreCampo: string): boolean {

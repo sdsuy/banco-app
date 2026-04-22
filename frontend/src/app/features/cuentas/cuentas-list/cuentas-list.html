@@ -3,15 +3,15 @@
 
   <input
     type="text"
-    [(ngModel)]="busqueda"
-    (input)="aplicarFiltro()"
+    [ngModel]="busqueda()"
+    (ngModelChange)="busqueda.set($event)"
     placeholder="Búsqueda rápida"
     class="search-input"
   />
 </div>
 
 <div class="card">
-  <h3>{{ editandoId ? 'Editar cuenta' : 'Nueva cuenta' }}</h3>
+  <h3>{{ editandoId() ? 'Editar cuenta' : 'Nueva cuenta' }}</h3>
 
   <form [formGroup]="form" (ngSubmit)="guardar()" class="form-grid">
     <div class="field">
@@ -42,7 +42,7 @@
       <label>Cliente</label>
       <select formControlName="clienteId">
         <option [ngValue]="null">Seleccione un cliente</option>
-        <option *ngFor="let cliente of clientes" [ngValue]="cliente.id">
+        <option *ngFor="let cliente of clientes()" [ngValue]="cliente.id">
           {{ cliente.nombre }} - {{ cliente.clienteId }}
         </option>
       </select>
@@ -60,7 +60,7 @@
 
     <div class="actions">
       <button type="submit">
-        {{ editandoId ? 'Actualizar' : 'Crear' }}
+        {{ editandoId() ? 'Actualizar' : 'Crear' }}
       </button>
 
       <button type="button" class="secondary" (click)="cancelar()">
@@ -69,8 +69,8 @@
     </div>
   </form>
 
-  <div class="message success" *ngIf="mensaje">{{ mensaje }}</div>
-  <div class="message error" *ngIf="error">{{ error }}</div>
+  <div class="message success" *ngIf="mensaje()">{{ mensaje() }}</div>
+  <div class="message error" *ngIf="error()">{{ error() }}</div>
 </div>
 
 <div class="card">
@@ -90,7 +90,7 @@
       </thead>
 
       <tbody>
-        <tr *ngFor="let cuenta of cuentasFiltradas">
+        <tr *ngFor="let cuenta of cuentasFiltradas()">
           <td>{{ cuenta.numeroCuenta }}</td>
           <td>{{ cuenta.tipoCuenta }}</td>
           <td>{{ cuenta.saldoInicial }}</td>
@@ -102,7 +102,7 @@
           </td>
         </tr>
 
-        <tr *ngIf="cuentasFiltradas.length === 0">
+        <tr *ngIf="cuentasFiltradas().length === 0">
           <td colspan="6" class="empty-row">No hay cuentas para mostrar.</td>
         </tr>
       </tbody>

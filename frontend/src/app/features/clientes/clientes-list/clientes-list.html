@@ -3,15 +3,15 @@
 
   <input
     type="text"
-    [(ngModel)]="busqueda"
-    (input)="aplicarFiltro()"
+    [ngModel]="busqueda()"
+    (ngModelChange)="busqueda.set($event)"
     placeholder="Búsqueda rápida"
     class="search-input"
   />
 </div>
 
 <div class="card">
-  <h3>{{ editandoId ? 'Editar cliente' : 'Nuevo cliente' }}</h3>
+  <h3>{{ editandoId() ? 'Editar cliente' : 'Nuevo cliente' }}</h3>
 
   <form [formGroup]="form" (ngSubmit)="guardar()" class="form-grid">
     <div class="field">
@@ -74,7 +74,7 @@
 
     <div class="actions">
       <button type="submit">
-        {{ editandoId ? 'Actualizar' : 'Crear' }}
+        {{ editandoId() ? 'Actualizar' : 'Crear' }}
       </button>
 
       <button type="button" class="secondary" (click)="cancelar()">
@@ -83,8 +83,8 @@
     </div>
   </form>
 
-  <div class="message success" *ngIf="mensaje">{{ mensaje }}</div>
-  <div class="message error" *ngIf="error">{{ error }}</div>
+  <div class="message success" *ngIf="mensaje()">{{ mensaje() }}</div>
+  <div class="message error" *ngIf="error()">{{ error() }}</div>
 </div>
 
 <div class="card">
@@ -104,7 +104,7 @@
       </thead>
 
       <tbody>
-        <tr *ngFor="let cliente of clientesFiltrados">
+        <tr *ngFor="let cliente of clientesFiltrados()">
           <td>{{ cliente.nombre }}</td>
           <td>{{ cliente.identificacion }}</td>
           <td>{{ cliente.clienteId }}</td>
@@ -116,7 +116,7 @@
           </td>
         </tr>
 
-        <tr *ngIf="clientesFiltrados.length === 0">
+        <tr *ngIf="clientesFiltrados().length === 0">
           <td colspan="6" class="empty-row">No hay clientes para mostrar.</td>
         </tr>
       </tbody>
