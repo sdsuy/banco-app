@@ -25,13 +25,14 @@ import lombok.Setter;
 @Getter
 @Setter
 public class Cuenta {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @NotNull
-    @Column(name = "numero_cuenta", nullable = false, unique = true)
-    private Long numeroCuenta;
+    @Column(name = "numero_cuenta", nullable = false, unique = true, length = 20)
+    private String numeroCuenta;
 
     @NotNull
     @Enumerated(EnumType.STRING)

@@ -29,7 +29,7 @@ public class ClienteServiceImpl implements ClienteService {
             throw new BusinessException("El clienteId ya existe");
         }
 
-        if (repository.existsByIdentificacion(dto.getIdentificacion())) {
+        if (repository.existsClienteByIdentificacion(dto.getIdentificacion())) {
             throw new BusinessException("La identificación ya existe");
         }
 
